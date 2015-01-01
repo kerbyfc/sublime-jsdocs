@@ -133,9 +133,12 @@ def flatten(theList):
 
 class JsdocsCommand(sublime_plugin.TextCommand):
 
-    def run(self, edit, inline=False):
+    def run(self, edit, inline=False, prefix=" *", options = {}):
 
         self.initialize(self.view, inline)
+
+        # reassign parser settings if needed
+        self.parser.settings.update(options);
 
         if self.parser.isExistingComment(self.line):
             write(self.view, "\n *" + self.indentSpaces)
@@ -143,6 +146,9 @@ class JsdocsCommand(sublime_plugin.TextCommand):
 
         # erase characters in the view (will be added to the output later)
         self.view.erase(edit, self.trailingRgn)
+
+        # use another prefix if needed
+        self.prefix = prefix;
 
         # match against a function declaration.
         out = self.parser.parse(self.line)
@@ -163,7 +169,8 @@ class JsdocsCommand(sublime_plugin.TextCommand):
         self.trailingString = escape(re.sub('\\s*\\*\\/\\s*$', '', self.trailingString))
 
         self.indentSpaces = " " * max(0, self.settings.get("jsdocs_indentation_spaces", 1))
-        self.prefix = "*"
+
+        self.prefix = " *"
 
         settingsAlignTags = self.settings.get("jsdocs_align_tags", 'deep')
         self.deepAlignTags = settingsAlignTags == 'deep'
@@ -309,9 +316,9 @@ class JsdocsCommand(sublime_plugin.TextCommand):
                             out.insert(idx, "")
                         lastLineIsTag = True
             for line in out:
-                snippet += "\n " + self.prefix + (self.indentSpaces + line if line else "")
+                snippet += "\n" + self.prefix + (self.indentSpaces + line if line else "")
         else:
-            snippet += "\n " + self.prefix + self.indentSpaces + "${0:" + self.trailingString + '}'
+            snippet += "\n" + self.prefix + self.indentSpaces + "${0:" + self.trailingString + '}'
 
         snippet += "\n" + closer
         return snippet
